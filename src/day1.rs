@@ -9,12 +9,6 @@ fn main() {
 
 fn get_lists() -> (Vec<u32>, Vec<u32>) {
     let input = read_day_input(1);
-    //     let input = r"3   4
-    // 4   3
-    // 2   5
-    // 1   3
-    // 3   9
-    // 3   3";
     let lines = input.lines();
     let lists: (Vec<_>, Vec<_>) = lines
         .map(|line| {

@@ -1,8 +1,8 @@
 package main
 
 import (
+	"adventofcode2024/util"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 )
@@ -13,7 +13,7 @@ func main() {
 }
 
 func part1() {
-	lines := readLines("../inputs/day2.txt")
+	lines := util.ReadLines("../../inputs/day2.txt")
 	safeReports := 0
 	for _, line := range lines {
 		numbersAsInt := stringsToInt(strings.Split(line, " "))
@@ -26,7 +26,7 @@ func part1() {
 }
 
 func part2() {
-	lines := readLines("../inputs/day2.txt")
+	lines := util.ReadLines("../../inputs/day2.txt")
 	safeReports := 0
 	for _, line := range lines {
 		numbersAsInt := stringsToInt(strings.Split(line, " "))
@@ -79,28 +79,14 @@ func numbersAreSafe(numbers []int64) bool {
 	return isSafe
 }
 
-func check(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
 func stringsToInt(strings []string) []int64 {
 	asInt := make([]int64, 0, len(strings))
 	for _, s := range strings {
 		number, err := strconv.ParseInt(s, 10, 8)
-		check(err)
+		util.Check(err)
 		asInt = append(asInt, number)
 	}
 	return asInt
-}
-
-func readLines(path string) []string {
-	data, err := os.ReadFile(path)
-	check(err)
-	asString := string(data)
-	lines := strings.Split(strings.ReplaceAll(asString, "\r\n", "\n"), "\n")
-	return lines
 }
 
 func absInt(x int64) int64 {
