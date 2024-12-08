@@ -1,19 +1,19 @@
-package main
+package day2
 
 import (
-	"adventofcode2024/util"
+	"Strange4/adventofcode2024/days/util"
 	"fmt"
 	"strconv"
 	"strings"
 )
 
-func main() {
+func Run() {
 	part1()
 	part2()
 }
 
 func part1() {
-	lines := util.ReadLines("../../inputs/day2.txt")
+	lines := util.ReadLines("./inputs/day2.txt")
 	safeReports := 0
 	for _, line := range lines {
 		numbersAsInt := stringsToInt(strings.Split(line, " "))
@@ -26,7 +26,7 @@ func part1() {
 }
 
 func part2() {
-	lines := util.ReadLines("../../inputs/day2.txt")
+	lines := util.ReadLines("./inputs/day2.txt")
 	safeReports := 0
 	for _, line := range lines {
 		numbersAsInt := stringsToInt(strings.Split(line, " "))
