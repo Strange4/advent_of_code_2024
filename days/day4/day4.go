@@ -7,6 +7,10 @@ import (
 )
 
 func Run() {
+	part2()
+}
+
+func part1() {
 	input := util.ReadFile("./inputs/day4.txt")
 	lines := util.ReadLines("./inputs/day4.txt")
 	v2 := util.TestFunc(func() {
