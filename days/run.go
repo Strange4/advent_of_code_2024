@@ -5,6 +5,7 @@ import (
 	"Strange4/adventofcode2024/days/day2"
 	"Strange4/adventofcode2024/days/day3"
 	"Strange4/adventofcode2024/days/day4"
+	"Strange4/adventofcode2024/days/day5"
 )
 
 func RunDay(day int) {
@@ -13,6 +14,7 @@ func RunDay(day int) {
 		2: day2.Run,
 		3: day3.Run,
 		4: day4.Run,
+		5: day5.Run,
 	}
 	daysMap[day]()
 }

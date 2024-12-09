@@ -8,6 +8,7 @@ import (
 
 func Run() {
 	part2()
+	part1()
 }
 
 func part1() {

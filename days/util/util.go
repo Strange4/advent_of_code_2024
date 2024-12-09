@@ -14,14 +14,26 @@ func Check(err error) {
 
 func ReadLines(path string) []string {
 	asString := ReadFile(path)
-	lines := strings.Split(strings.ReplaceAll(asString, "\r\n", "\n"), "\n")
+	lines := strings.Split(CleanInput(asString), "\n")
 	return lines
+}
+
+func CleanInput(input string) string {
+	return strings.ReplaceAll(input, "\r\n", "\n")
+}
+
+func Map[T any, V any](slice []T, fn func(T) V) []V {
+	newSlice := make([]V, len(slice))
+	for i, element := range slice {
+		newSlice[i] = fn(element)
+	}
+	return newSlice
 }
 
 func ReadFile(path string) string {
 	data, err := os.ReadFile(path)
 	Check(err)
-	return string(data)
+	return CleanInput(string(data))
 }
 
 func TestFunc(fn func()) time.Duration {
