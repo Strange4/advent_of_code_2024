@@ -1,8 +1,9 @@
 package day6
 
 import (
+	"Strange4/adventofcode2024/days/util"
 	"fmt"
-	"strings"
+	"slices"
 )
 
 func Run() {
@@ -25,22 +26,11 @@ type Guard = struct {
 
 type Area = struct {
 	hasBeenStepedOn bool
-	direction       Direction // if it was stepped on, what direction where you going?
+	direction       []Direction // if it was stepped on, what direction where you going?
 }
 
 func part1And2() {
-	input := `....#.....
-.........#
-..........
-..#.......
-.......#..
-..........
-.#..^.....
-........#.
-#.........
-......#...`
-	lines := strings.Split(input, "\n")
-	// lines := util.ReadLines("./inputs/day6.txt")
+	lines := util.ReadLines("./inputs/day6.txt")
 
 	var currentPos Guard
 
@@ -59,7 +49,7 @@ func part1And2() {
 		}
 	}
 
-	possibleLoops := walkTheGuard(currentPos, visitedAreas, obstacles, 1)
+	possibleLoops := walkTheGuard(currentPos, currentPos, visitedAreas, obstacles, 1)
 
 	sum := 1 // count the ending step
 	for y := 0; y < len(visitedAreas); y++ {
@@ -74,108 +64,84 @@ func part1And2() {
 	fmt.Println("Part 2:", possibleLoops)
 }
 
-func walkTheGuard(currentPos Guard, visitedAreas [][]Area, obstacles [][]bool, obstaclesToPlace int) int {
+func walkTheGuard(initialPosition Guard, currentPos Guard, visitedAreas [][]Area, obstacles [][]bool, obstaclesToPlace int) int {
 	possibleLoops := 0
-
 	for {
-		// for ;!obstacles[currentPos.y][currentPos.x] && !isAtEdge(currentPos, len(obstacles[0]), len(obstacles));
-		if currentPos.direction == Right {
-			for ; !obstacles[currentPos.y][currentPos.x] && !isAtEdge(currentPos, len(obstacles[0]), len(obstacles)); currentPos.x++ {
-				area := visitedAreas[currentPos.y][currentPos.x]
-
-				// loop detected
-				if area.hasBeenStepedOn && area.direction == currentPos.direction {
-					return possibleLoops + 1
-				}
-
-				if obstaclesToPlace > 0 {
-					newLoops := canCreateLoop(currentPos, visitedAreas, obstacles, obstaclesToPlace-1)
-
-					possibleLoops += newLoops
-				}
-				visitedAreas[currentPos.y][currentPos.x] = Area{true, Right}
+		for ; !obstacles[currentPos.y][currentPos.x] && !isAtEdge(currentPos, len(obstacles[0]), len(obstacles)); incrementDirection(&currentPos) {
+			area := visitedAreas[currentPos.y][currentPos.x]
+			if area.hasBeenStepedOn && slices.Contains(area.direction, currentPos.direction) {
+				return possibleLoops + 1
 			}
-			if !obstacles[currentPos.y][currentPos.x] && isAtEdge(currentPos, len(obstacles[0]), len(obstacles)) {
-				return possibleLoops
-			}
-			currentPos.x--
-			currentPos.direction = Down
-			currentPos.y++
-		} else if currentPos.direction == Left {
-			for ; !obstacles[currentPos.y][currentPos.x] && !isAtEdge(currentPos, len(obstacles[0]), len(obstacles)); currentPos.x-- {
-				area := visitedAreas[currentPos.y][currentPos.x]
 
-				// loop detected
-				if area.hasBeenStepedOn && area.direction == Left {
-					return possibleLoops + 1
-				}
-				if obstaclesToPlace > 0 {
-					newLoops := canCreateLoop(currentPos, visitedAreas, obstacles, obstaclesToPlace-1)
-					possibleLoops += newLoops
-				}
+			if obstaclesToPlace > 0 {
+				newLoop := canCreateLoop(initialPosition, currentPos, visitedAreas, obstacles, obstaclesToPlace-1)
+				possibleLoops += newLoop
+			}
+			visitedAreas[currentPos.y][currentPos.x].hasBeenStepedOn = true
+			if visitedAreas[currentPos.y][currentPos.x].direction == nil {
+				visitedAreas[currentPos.y][currentPos.x].direction = make([]Direction, 0)
+			}
+			visitedAreas[currentPos.y][currentPos.x].direction = append(visitedAreas[currentPos.y][currentPos.x].direction, currentPos.direction)
 
-				visitedAreas[currentPos.y][currentPos.x] = Area{true, Left}
-			}
-			if !obstacles[currentPos.y][currentPos.x] && isAtEdge(currentPos, len(obstacles[0]), len(obstacles)) {
-				return possibleLoops
-			}
-			currentPos.x++
-			currentPos.direction = Up
-			currentPos.y--
-		} else if currentPos.direction == Up {
-			for ; !obstacles[currentPos.y][currentPos.x] && !isAtEdge(currentPos, len(obstacles[0]), len(obstacles)); currentPos.y-- {
-				area := visitedAreas[currentPos.y][currentPos.x]
-
-				// loop detected
-				if area.hasBeenStepedOn && area.direction == Up {
-					return possibleLoops + 1
-				}
-				if obstaclesToPlace > 0 {
-					newLoops := canCreateLoop(currentPos, visitedAreas, obstacles, obstaclesToPlace-1)
-
-					possibleLoops += newLoops
-				}
-				visitedAreas[currentPos.y][currentPos.x] = Area{true, Up}
-			}
-			if !obstacles[currentPos.y][currentPos.x] && isAtEdge(currentPos, len(obstacles[0]), len(obstacles)) {
-				return possibleLoops
-			}
-			currentPos.y++
-			currentPos.direction = Right
-			currentPos.x++
-		} else if currentPos.direction == Down {
-			for ; !obstacles[currentPos.y][currentPos.x] && !isAtEdge(currentPos, len(obstacles[0]), len(obstacles)); currentPos.y++ {
-				area := visitedAreas[currentPos.y][currentPos.x]
-
-				// loop detected
-				if area.hasBeenStepedOn && area.direction == Down {
-					return possibleLoops + 1
-				}
-				if obstaclesToPlace > 0 {
-					newLoops := canCreateLoop(currentPos, visitedAreas, obstacles, obstaclesToPlace-1)
-
-					possibleLoops += newLoops
-				}
-				visitedAreas[currentPos.y][currentPos.x] = Area{true, Down}
-			}
-			if !obstacles[currentPos.y][currentPos.x] && isAtEdge(currentPos, len(obstacles[0]), len(obstacles)) {
-				return possibleLoops
-			}
-			currentPos.y--
-			currentPos.direction = Left
-			currentPos.x--
 		}
+		if obstacles[currentPos.y][currentPos.x] {
+			decrementDirection(&currentPos)
+		} else if isAtEdge(currentPos, len(obstacles[0]), len(obstacles)) {
+			return possibleLoops
+		} else {
+			panic("Exited loop without wanting to")
+		}
+		turnGuard(&currentPos)
 	}
 }
 
-// func incrementDirection(g *Guard) {
-// 	if g.direction == Right {
-// 		g.x++
-// 	} else
-// }
+func incrementDirection(g *Guard) {
+	if g.direction == Right {
+		g.x++
+	} else if g.direction == Left {
+		g.x--
+	} else if g.direction == Up {
+		g.y--
+	} else if g.direction == Down {
+		g.y++
+	}
+}
+func decrementDirection(g *Guard) {
+	if g.direction == Right {
+		g.x--
+	} else if g.direction == Left {
+		g.x++
+	} else if g.direction == Up {
+		g.y++
+	} else if g.direction == Down {
+		g.y--
+	}
+}
 
-func canCreateLoop(p Guard, areas [][]Area, obstacles [][]bool, obstaclesToPlace int) int {
+func turnGuard(g *Guard) {
+	if g.direction == Right {
+		g.direction = Down
+	} else if g.direction == Left {
+		g.direction = Up
+	} else if g.direction == Up {
+		g.direction = Right
+	} else if g.direction == Down {
+		g.direction = Left
+	}
+}
+
+func canCreateLoop(initialPosition Guard, guard Guard, areas [][]Area, obstacles [][]bool, obstaclesToPlace int) int {
 	// checking if we create an obstacle in front would create a loop
+	incrementDirection(&guard)
+	if guard.x == initialPosition.x && guard.y == initialPosition.y {
+		// you can't place an obstacle on the guards initial position
+		return 0
+	}
+
+	if areas[guard.y][guard.x].hasBeenStepedOn {
+		// we can't add an obstacle where the guard has already stepped on
+		return 0
+	}
 
 	newArea := make([][]Area, len(areas))
 	for i, row := range areas {
@@ -190,35 +156,10 @@ func canCreateLoop(p Guard, areas [][]Area, obstacles [][]bool, obstaclesToPlace
 		copy(newRow, row)
 		newObstacles[i] = newRow
 	}
-	if p.direction == Left {
-		// if there is already an obstacle there
-		// this means that we can't place one here
-		if obstacles[p.y][p.x-1] {
-			return 0
-		}
-		newObstacles[p.y][p.x-1] = true
-		return walkTheGuard(p, newArea, newObstacles, obstaclesToPlace)
-	} else if p.direction == Right {
-		if obstacles[p.y][p.x+1] {
-			return 0
-		}
-		newObstacles[p.y][p.x+1] = true
-		return walkTheGuard(p, newArea, newObstacles, obstaclesToPlace)
-	} else if p.direction == Up {
-		if obstacles[p.y-1][p.x] {
-			return 0
-		}
-		newObstacles[p.y-1][p.x] = true
-		return walkTheGuard(p, newArea, newObstacles, obstaclesToPlace)
-	} else if p.direction == Down {
-		if obstacles[p.y+1][p.x] {
-			return 0
-		}
-		newObstacles[p.y+1][p.x] = true
-		return walkTheGuard(p, newArea, newObstacles, obstaclesToPlace)
-	}
+	newObstacles[guard.y][guard.x] = true
+	decrementDirection(&guard)
 
-	panic("This a direction that I can't handle")
+	return walkTheGuard(initialPosition, guard, newArea, newObstacles, obstaclesToPlace)
 }
 
 func isAtEdge(p Guard, width, height int) bool {
