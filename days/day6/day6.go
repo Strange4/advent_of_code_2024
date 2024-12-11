@@ -15,8 +15,8 @@ type Direction int
 const (
 	Up Direction = iota
 	Right
-	Left
 	Down
+	Left
 )
 
 type Guard = struct {
@@ -66,33 +66,52 @@ func part1And2() {
 
 func walkTheGuard(initialPosition Guard, currentPos Guard, visitedAreas [][]Area, obstacles [][]bool, obstaclesToPlace int) int {
 	possibleLoops := 0
+	// about the right number of steps throughout the whole program
+	offShootChannel := make(chan int, 5500)
+	offShoots := 0
 	for {
+		loopDetected := false
 		for ; !obstacles[currentPos.y][currentPos.x] && !isAtEdge(currentPos, len(obstacles[0]), len(obstacles)); incrementDirection(&currentPos) {
-			area := visitedAreas[currentPos.y][currentPos.x]
+			area := &visitedAreas[currentPos.y][currentPos.x]
 			if area.hasBeenStepedOn && slices.Contains(area.direction, currentPos.direction) {
-				return possibleLoops + 1
+				possibleLoops++
+				loopDetected = true
+				break
 			}
 
 			if obstaclesToPlace > 0 {
-				newLoop := canCreateLoop(initialPosition, currentPos, visitedAreas, obstacles, obstaclesToPlace-1)
-				possibleLoops += newLoop
+				if canCreateLoop(offShootChannel, initialPosition, currentPos, visitedAreas, obstacles, obstaclesToPlace-1) {
+					offShoots++
+				}
 			}
-			visitedAreas[currentPos.y][currentPos.x].hasBeenStepedOn = true
-			if visitedAreas[currentPos.y][currentPos.x].direction == nil {
-				visitedAreas[currentPos.y][currentPos.x].direction = make([]Direction, 0)
-			}
-			visitedAreas[currentPos.y][currentPos.x].direction = append(visitedAreas[currentPos.y][currentPos.x].direction, currentPos.direction)
 
+			area.hasBeenStepedOn = true
+			if area.direction == nil {
+				area.direction = make([]Direction, 0)
+			}
+			area.direction = append(area.direction, currentPos.direction)
 		}
 		if obstacles[currentPos.y][currentPos.x] {
 			decrementDirection(&currentPos)
-		} else if isAtEdge(currentPos, len(obstacles[0]), len(obstacles)) {
-			return possibleLoops
+		} else if loopDetected || isAtEdge(currentPos, len(obstacles[0]), len(obstacles)) {
+			break
 		} else {
 			panic("Exited loop without wanting to")
 		}
 		turnGuard(&currentPos)
 	}
+
+	for offShoots > 0 {
+		v, ok := <-offShootChannel
+		if !ok {
+			panic("Why is this channel closed?")
+		}
+
+		possibleLoops += v
+		offShoots--
+	}
+	close(offShootChannel)
+	return possibleLoops
 }
 
 func incrementDirection(g *Guard) {
@@ -130,38 +149,53 @@ func turnGuard(g *Guard) {
 	}
 }
 
-func canCreateLoop(initialPosition Guard, guard Guard, areas [][]Area, obstacles [][]bool, obstaclesToPlace int) int {
-	// checking if we create an obstacle in front would create a loop
+func canCreateLoop(outChannel chan int, initialPosition Guard, guard Guard, areas [][]Area, obstacles [][]bool, obstaclesToPlace int) bool {
 	incrementDirection(&guard)
 	if guard.x == initialPosition.x && guard.y == initialPosition.y {
 		// you can't place an obstacle on the guards initial position
-		return 0
+		return false
 	}
 
 	if areas[guard.y][guard.x].hasBeenStepedOn {
 		// we can't add an obstacle where the guard has already stepped on
-		return 0
+		return false
 	}
 
-	newArea := make([][]Area, len(areas))
-	for i, row := range areas {
-		newRow := make([]Area, len(row))
-		copy(newRow, row)
-		newArea[i] = newRow
-	}
+	newArea := copyAreaGrid(areas)
 
 	newObstacles := make([][]bool, len(obstacles))
-	for i, row := range obstacles {
-		newRow := make([]bool, len(row))
-		copy(newRow, row)
-		newObstacles[i] = newRow
+	for i := range obstacles {
+		newObstacles[i] = make([]bool, len(obstacles[i]))
+		copy(newObstacles[i], obstacles[i])
 	}
+
+	// checking if we create an obstacle in front would create a loop
 	newObstacles[guard.y][guard.x] = true
 	decrementDirection(&guard)
 
-	return walkTheGuard(initialPosition, guard, newArea, newObstacles, obstaclesToPlace)
+	go func() {
+		output := walkTheGuard(initialPosition, guard, newArea, newObstacles, obstaclesToPlace)
+		outChannel <- output
+	}()
+	return true
 }
 
 func isAtEdge(p Guard, width, height int) bool {
 	return (p.x <= 0 && p.direction == Left) || (p.x >= width-1 && p.direction == Right) || (p.y <= 0 && p.direction == Up) || (p.y >= height-1 && p.direction == Down)
+}
+
+func copyAreaGrid(areas [][]Area) [][]Area {
+	newArea := make([][]Area, len(areas))
+	for i := range areas {
+		newArea[i] = make([]Area, len(areas[i]))
+		for j := range areas[i] {
+			if areas[i][j].hasBeenStepedOn {
+				newArea[i][j].hasBeenStepedOn = areas[i][j].hasBeenStepedOn
+				newArea[i][j].direction = make([]Direction, len(areas[i][j].direction))
+				copy(newArea[i][j].direction, areas[i][j].direction)
+			}
+
+		}
+	}
+	return newArea
 }
