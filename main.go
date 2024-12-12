@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	day := flag.Int("day", 6, "the day to run")
+	day := flag.Int("day", 7, "the day to run")
 	flag.Parse()
 	if *day <= 0 {
 		fmt.Println("The days must be 1 days max")
