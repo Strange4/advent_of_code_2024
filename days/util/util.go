@@ -6,6 +6,10 @@ import (
 	"time"
 )
 
+type Position struct {
+	X, Y int
+}
+
 func Check(err error) {
 	if err != nil {
 		panic(err)
@@ -26,6 +30,16 @@ func Map[T any, V any](slice []T, fn func(T) V) []V {
 	newSlice := make([]V, len(slice))
 	for i, element := range slice {
 		newSlice[i] = fn(element)
+	}
+	return newSlice
+}
+
+func Filter[T any](slice []T, fn func(T) bool) []T {
+	newSlice := make([]T, 0, len(slice))
+	for _, element := range slice {
+		if fn(element) {
+			newSlice = append(newSlice, element)
+		}
 	}
 	return newSlice
 }
