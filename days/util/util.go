@@ -34,6 +34,13 @@ func Map[T any, V any](slice []T, fn func(T) V) []V {
 	return newSlice
 }
 
+func Min[T int | uint | uint8](a, b T) T {
+	if a > b {
+		return b
+	}
+	return a
+}
+
 func Filter[T any](slice []T, fn func(T) bool) []T {
 	newSlice := make([]T, 0, len(slice))
 	for _, element := range slice {
