@@ -6,10 +6,7 @@ import (
 	"time"
 )
 
-type Position struct {
-	X, Y int
-}
-
+// useful functions
 func Check(err error) {
 	if err != nil {
 		panic(err)
@@ -64,17 +61,68 @@ func TestFunc(fn func()) time.Duration {
 	return end.Sub(start)
 }
 
-func Transpose(slice [][]string) [][]string {
-	xl := len(slice[0])
-	yl := len(slice)
-	result := make([][]string, xl)
-	for i := range result {
-		result[i] = make([]string, yl)
+// directions
+
+type Position struct {
+	X, Y int
+}
+
+type Direction int
+
+const (
+	Up Direction = iota
+	Right
+	Down
+	Left
+)
+
+func (d Direction) OppositeDirection() Direction {
+	return OppositeDirection(d)
+}
+
+func OppositeDirection(d Direction) Direction {
+	switch d {
+	case Up:
+		return Down
+	case Right:
+		return Left
+	case Down:
+		return Up
+	case Left:
+		return Right
+	default:
+		panic("This Opposite Direction is not handled")
 	}
-	for i := 0; i < xl; i++ {
-		for j := 0; j < yl; j++ {
-			result[i][j] = slice[j][i]
-		}
+}
+
+func (p *Position) Move(d Direction) {
+	switch d {
+	case Up:
+		p.Y--
+	case Right:
+		p.X++
+	case Down:
+		p.Y++
+	case Left:
+		p.X--
 	}
-	return result
+}
+
+func (p *Position) MoveAndCopy(d Direction) Position {
+	cp := *p
+	switch d {
+	case Up:
+		cp.Y--
+	case Right:
+		cp.X++
+	case Down:
+		cp.Y++
+	case Left:
+		cp.X--
+	}
+	return cp
+}
+
+func (p *Position) InBounds(width, height int) bool {
+	return p.X >= 0 && p.X < width && p.Y >= 0 && p.Y < height
 }
